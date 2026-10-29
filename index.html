@@ -261,7 +261,7 @@ html.duo-side .pin{padding-top:calc(var(--sat) + 14px)}
 <script src="puzzles.js"></script>
 <script>
 'use strict';
-const BUILD='2026-10-28.1';
+const BUILD='2026-10-28.2';
 const Q=new URLSearchParams(location.search);
 const $=id=>document.getElementById(id);
 const PACKS=window.LATTICE_PACKS||[];
@@ -524,6 +524,10 @@ function startPuzzle(q,from){lastFrom=from;audio();
 function leavePlay(){persist();timerOn=false;hideDone();G=null;}
 $('pback').onclick=()=>{haptic();goHome();};
 
+// 2026-10-28: pictures no longer come with pre-filled squares. Saves started before that still hold those squares as filled, so clear them once.
+const OLD_GIVENS={"first:anchor":[60],"garden:tulip":[61],"garden:cherries":[25,8,34],"garden:carrot":[37,8],"garden:sunflower":[206],"garden:butterfly":[5,9],"farm:chick":[59],"farm:sheep":[19],"sea:crab":[2,12,166,178],"sea:gull":[3,11],"sea:palm":[77,87],"kitchen:apple":[57],"halloween:pumpkin":[5],"halloween:graveyard":[74,31,37],"night:rocket":[183,191],"night:telescope":[140,159],"workshop:clock":[10,121,232,229],"workshop:light-bulb":[17],"workshop:compass":[219,297,323,9,180,261,335],"workshop:hourglass":[159,66,59,162],"music:violin":[62,15,205],"music:headphones":[279],"creatures:penguin":[341,358],"forest:beaver":[121],"voyages:balloon":[428,432,342,350],"voyages:bridge":[123,66,110,53],"wonders:leaning-tower":[70]};
+function dropOldGivens(){if(S.v2g)return;for(const id in OLD_GIVENS){const pr=S.prog[id];if(!pr||pr.done||!pr.s)continue;const a=pr.s.split('');for(const i of OLD_GIVENS[id])if(i<a.length)a[i]='.';pr.s=a.join('');}S.v2g=1;save(true);}
+dropOldGivens();
 function stateStr(){let s='';for(let i=0;i<G.n;i++){const v=G.st[i];s+=G.err.has(i)?'!':v<0?'.':v===0?(G.ax.has(i)?'a':'x'):String.fromCharCode(48+v);}return s;}
 function persist(){if(!G)return;const pr=S.prog[G.q.id]||(S.prog[G.q.id]={});if(!G.done){pr.s=stateStr();pr.t=G.t;pr.m=G.mis;pr.h=G.hints;}save();}
 
@@ -744,7 +748,7 @@ function ago(ms){const m=Math.round((Date.now()-ms)/60000);return m<1?'just now'
 const devName=d=>({duo:'iPhone Duo',iphone:'iPhone',ipad:'iPad',browser:'a browser'})[d.split('-')[0]]||d;
 async function bkList(){const r=await fetch('/saves/'+BK_APP+'/',{cache:'no-store'});if(!r.ok)throw 0;const l=await r.json();
  return Promise.all(l.map(async e=>{try{const s=await (await fetch('/saves/'+BK_APP+'/'+e.device,{cache:'no-store'})).json();return Object.assign(e,{s,n:solvedIn(s),me:e.device===bkDevice()});}catch(_){return null;}})).then(a=>a.filter(Boolean));}
-function bkRestore(e){const keep=S.set;S=Object.assign(blank(),e.s);S.set=keep;save(true);bkSent='';closeSheet();if(G)leavePlay();cur='play';show('home',true);renderHome();toast('Restored · '+e.n+' solved');}
+function bkRestore(e){const keep=S.set;S=Object.assign(blank(),e.s);S.set=keep;delete S.v2g;dropOldGivens();save(true);bkSent='';closeSheet();if(G)leavePlay();cur='play';show('home',true);renderHome();toast('Restored · '+e.n+' solved');}
 function openRestore(){openSheet(async o=>{o.append(el('h4','','Restore'));const info=el('div','bkinfo','Looking on the NAS…');o.append(info);
  let l;try{l=await bkList();}catch(_){info.textContent='The NAS can’t be reached. Restore works at home or on the tailnet.';return;}
  if(!l.length){info.textContent='No backups yet.';return;}info.textContent='Replaces the progress on this device. Your settings stay as they are.';

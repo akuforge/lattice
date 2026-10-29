@@ -75,6 +75,20 @@ function findGivens(g,w,h,opts){opts=opts||{};const C=maxColour(g),cl=cluesOf(g,
   givens.push(bi);m[bi]=1<<g[bi];r=propagate(cl,w,h,m,[bi]);if(givens.length>opts.max)return null;}
  return givens;}
 
+// Edit a picture until it solves line by line with no help: each round changes the one edge square that unlocks the most,
+// preferring a change that blends in (a square becoming the value most of its neighbours already have). Returns the edits.
+function repair(g,w,h,opts){opts=opts||{};const max=opts.max||8,edits=[];g=g.slice();
+ const solves=gg=>{const C=maxColour(gg),m=startMasks(gg,w,h,C),r=propagate(cluesOf(gg,w,h),w,h,m);let k=0;for(let i=0;i<m.length;i++)if(pop(m[i])===1)k++;return{ok:r.ok,solved:r.ok&&r.solved,known:k};};
+ let cur=solves(g);
+ while(!cur.solved&&edits.length<max){let best=null;
+  for(let i=0;i<g.length;i++){const x=i%w,y=(i/w)|0,nb=[];
+   for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){if(!dx&&!dy)continue;const xx=x+dx,yy=y+dy;nb.push(xx<0||yy<0||xx>=w||yy>=h?0:g[yy*w+xx]);}
+   const orth=[nb[1],nb[3],nb[4],nb[6]];if(orth.every(v=>v===g[i]))continue;// edge squares only
+   for(const v of new Set([0,...orth])){if(v===g[i])continue;const cost=nb.filter(n=>n!==v).length;const t=g.slice();t[i]=v;const r=solves(t);if(!r.ok)continue;
+    const sc=(r.solved?1e6:0)+r.known*4-cost*6;if(!best||sc>best.sc)best={i,v,sc,r};}}
+  if(!best)break;edits.push([best.i,g[best.i],best.v]);g[best.i]=best.v;cur=best.r;}
+ return{g,edits,solved:cur.solved};}
+
 // The cell values a fully solved mask set implies.
 function maskToGrid(m){return Array.from(m,v=>lowbit(v));}
 
@@ -123,16 +137,17 @@ function motif(w,h,R,colours){const g=new Array(w*h).fill(0),sym=R()<.75,big=Mat
 // How busy the clues are: average runs per line. Calm pictures read better and play better.
 function busyness(g,w,h){const cl=cluesOf(g,w,h);let n=0;for(const r of cl.rows)n+=r.length;for(const c of cl.cols)n+=c.length;return n/(w+h);}
 
-// A procedural puzzle that is solvable by logic alone, or with a few givens if the dice won't cooperate.
+// A procedural puzzle that is solvable by logic alone.
 function generate(w,h,seed,colours){const R=rng(seed);colours=colours||1;let best=null,bestScore=1e9,fallback=null;
  const target=1.6+Math.max(w,h)/9+(colours-1)*.9;
- for(let tries=0;tries<24;tries++){const g=motif(w,h,R,colours);let filled=0;for(const v of g)if(v)filled++;
+ for(let tries=0;tries<24||(!best&&tries<200);tries++){const g=motif(w,h,R,colours);let filled=0;for(const v of g)if(v)filled++;
   if(filled<w*h*.3||filled>w*h*.78)continue;
   const C=maxColour(g),cl=cluesOf(g,w,h),m=startMasks(g,w,h,C),r=propagate(cl,w,h,m);const score=Math.abs(busyness(g,w,h)-target);
   if(r.ok&&r.solved){if(score<bestScore){best={g,givens:[]};bestScore=score;}if(score<.35)break;}
   else if(!fallback)fallback=g;}
- if(best)return best;const g=fallback||motif(w,h,R,colours);return{g,givens:findGivens(g,w,h,{rng:R,sample:30})};}
+ if(best)return best;// never seen in testing; repair rather than hand out filled squares
+ const fx=repair(fallback||motif(w,h,R,colours),w,h,{max:40});return{g:fx.g,givens:fx.solved?[]:findGivens(fx.g,w,h,{rng:R,sample:30})};}
 
-const api={busyness,motif,clueOf,cluesOf,solveLine,propagate,startMasks,findGivens,maskToGrid,hint,generate,rng,hashStr,maxColour,fullMask,pop};
+const api={busyness,motif,clueOf,cluesOf,solveLine,propagate,startMasks,findGivens,repair,maskToGrid,hint,generate,rng,hashStr,maxColour,fullMask,pop};
 if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.LS=api;
 })(typeof self!=='undefined'?self:this);
