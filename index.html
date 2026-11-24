@@ -103,7 +103,7 @@ h2.sec span{font:400 13px var(--sans);color:var(--ink2)}
 #body{flex:1;min-height:0;display:flex;flex-direction:column}
 #stage{position:relative;flex:1;min-height:0;touch-action:none}
 html.land #stage{margin-bottom:calc(var(--sab) + 8px)}/* keep the board clear of the home-bar swipe */
-#bHint{display:none!important}
+#bHint:not(.show){display:none!important}
 .hintb{margin:0 0 8px}.hintb span{color:var(--ink2);font-weight:400}
 #cv{position:absolute;left:0;top:0;touch-action:none}
 #tools{flex:none;padding:8px calc(var(--sar) + 14px) calc(var(--sab) + 12px) calc(var(--sal) + 14px);display:flex;flex-direction:column;gap:10px}
@@ -184,6 +184,26 @@ html.land .act .ib{width:44px}
 #coach p{margin:0 0 12px;font:500 19px/1.25 var(--serif)}
 #coach .nx{display:flex;justify-content:space-between;align-items:center;color:var(--ink2);font-size:13px}
 #coach .nx button{color:var(--gold);font-weight:600;font-size:15px;padding:6px 2px}
+/* ---- lessons (Learn): the banner above the board, the pulsing tool chip, the Learn card */
+#lb{flex:none;align-self:center;width:calc(100% - var(--sal) - var(--sar) - 28px);max-width:620px;margin:0 0 4px;padding:14px 16px;border-radius:16px;background:var(--card);border:1px solid color-mix(in srgb,var(--gold) 45%,transparent)}
+#lb.gone{visibility:hidden}
+#lb .lh{display:flex;align-items:center;gap:8px;margin-bottom:9px}
+#lb .lk{flex:1;min-width:0;font:600 11.5px var(--sans);letter-spacing:.1em;text-transform:uppercase;color:var(--gold);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#lb .ld{display:flex;gap:5px;flex:none}
+#lb .ld i{width:7px;height:7px;border-radius:50%;border:1px solid var(--line2);display:block}
+#lb .ld i.on{background:var(--gold);border-color:var(--gold)}
+#lb .lt{display:grid}
+#lb .lt p{grid-area:1/1;margin:0;font:500 22px/1.2 var(--serif);font-variant-numeric:lining-nums;visibility:hidden}
+#lb .lt p.on{visibility:visible}
+#lb .ln{margin-top:6px;min-height:22px;color:var(--red);font:600 15px/22px var(--sans)}
+#lb .lnx{display:block;height:42px;padding:0 26px;margin-top:6px;border-radius:12px;background:var(--ink);color:var(--paper);font:600 16px var(--sans)}
+#lb .lnx:active{opacity:.85}
+#lb .lnx.none{display:none}
+@media (max-height:500px){html.land #lb{padding:10px 16px}html.land #lb .lh{margin-bottom:6px}html.land #lb .lt p{font-size:18px}}
+.chip.want:after{content:'';position:absolute;inset:-4px;border-radius:17px;border:2.5px solid var(--gold);animation:cpulse 1.4s ease-in-out infinite;pointer-events:none}
+@keyframes cpulse{0%,100%{opacity:.25;transform:scale(1)}50%{opacity:1;transform:scale(1.08)}}
+.lic{flex:none;width:64px;height:64px;border-radius:12px;background:var(--goldsoft);display:grid;place-items:center;color:var(--gold)}
+.lic svg.i{width:30px;height:30px;stroke-width:1.5}
 /* ---- iPhone Duo, opened: two pages on the home screen, with the gutter on the fold */
 html.wide #home .page+.page{border-left:1px solid var(--line)}
 html.wide #home{gap:0}
@@ -192,6 +212,13 @@ html.wide #home .page+.page .pin{padding-left:26px;padding-right:calc(var(--sar)
 html.wide .tiles{grid-template-columns:repeat(3,1fr);padding:22px 0 30px}
 html.wide .chead{padding:0}
 html.wide .sheet{left:50%;border-left:1px solid var(--line);border-radius:22px 0 0 0}
+/* wide Settings spans both pages in two columns, split at the middle, so it fits without scrolling */
+html.wide .sheet.split{left:0;border-left:0;border-radius:22px 22px 0 0}
+html.wide .sheet.split .in{padding:8px 0 calc(var(--sab) + 26px)}
+.cols{display:grid;grid-template-columns:1fr 1fr}
+.cols>.cp{min-width:0;padding:0 26px}
+.cols>.cp:first-child{padding-left:calc(var(--sal) + 26px)}
+.cols>.cp:last-child{padding-right:calc(var(--sar) + 26px)}
 html.wide #coach{left:calc(50% + 20px);right:20px;margin:0}
 html.wide #done .frame{width:100%;display:grid;grid-template-columns:1fr 1fr;align-items:center}
 html.wide #done canvas{margin:0 auto}
@@ -227,6 +254,7 @@ html.duo-side .pin{padding-top:calc(var(--sat) + 14px)}
   <div id="timer"></div>
   <button class="ib" id="pmenu" aria-label="Options"><svg class="i" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/><circle cx="19" cy="12" r="1.2" fill="currentColor"/></svg></button>
  </div>
+ <div id="lb" class="hidden"></div>
  <div id="body">
   <div id="stage"><canvas id="cv"></canvas></div>
   <div id="tools">
@@ -261,7 +289,7 @@ html.duo-side .pin{padding-top:calc(var(--sat) + 14px)}
 <script src="puzzles.js"></script>
 <script>
 'use strict';
-const BUILD='2026-11-24.3';
+const BUILD='2026-11-24.4';
 const Q=new URLSearchParams(location.search);
 const $=id=>document.getElementById(id);
 const PACKS=window.LATTICE_PACKS||[];
@@ -458,6 +486,7 @@ function renderHome(){const o=$('homeIn');o.innerHTML='';
  const bS=el('button','ib','<svg class="i" viewBox="0 0 24 24"><path d="M5 20V10M12 20V4M19 20v-7"/></svg>');bS.setAttribute('aria-label','Statistics');bS.onclick=()=>{haptic();openStats();};
  const bO=el('button','ib','<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg>');bO.setAttribute('aria-label','Settings');bO.onclick=()=>{haptic();openSettings();};
  tl.append(bS,bO);m.append(tl);o.append(m);
+ if(lessonsDone()<LQ.length)o.append(learnCard());
  // Today
  const key=todayKey(),dp=dailyPuzzle(key),dr=S.prog[dp.id]||{};
  const today=el('button','card');const tc=dr.done?cloneCanvas(thumb(dp,64,'pic')):cloneCanvas(thumb(dp,64,'prog'));today.append(tc);
@@ -485,6 +514,7 @@ function renderHome(){const o=$('homeIn');o.innerHTML='';
  const ep=E.cur&&S.prog['endless:'+E.cur.seed];
  if(E.cur&&ep&&!ep.done&&ep.s){const b=el('button','big ghost','Continue '+E.cur.w+' × '+E.cur.h+' · '+fmtT(ep.t));b.style.marginBottom='8px';b.onclick=()=>{haptic();startPuzzle(endlessPuzzle(),'home');};en.append(b);}
  const go=el('button','big','New picture');go.onclick=()=>{haptic();newEndless();};en.append(go);o.append(en);
+ if(lessonsDone()===LQ.length){const lc=learnCard();lc.style.marginTop='24px';o.append(lc);}
  o.append(el('div','foot','Every picture can be solved by reasoning alone.'));
  if(wide)renderPack($('packIn2'),packSel,true);}
 function yesterday(){const d=new Date();d.setDate(d.getDate()-1);return todayKey(d);}
@@ -508,21 +538,21 @@ let lastFrom='home';
 const cv=$('cv'),cx=cv.getContext('2d');
 // G: {q, w,h, n, sol, st:Int8Array(-1 unknown, 0 cross, c colour), giv:Set, err:Set, clues, tool(0 cross / c colour), undo:[], redo:[], t, mis, hints, view, done}
 function startPuzzle(q,from){lastFrom=from;audio();
- const n=q.w*q.h,pr=S.prog[q.id]||{};
- G={q,w:q.w,h:q.h,n,sol:q.grid,st:new Int8Array(n).fill(-1),giv:new Set(q.gv||[]),err:new Set(),clues:LS.cluesOf(q.grid,q.w,q.h),tool:1,undo:[],redo:[],t:pr.t||0,mis:pr.m||0,hints:pr.h||0,z:1,px:0,py:0,done:!!pr.done,hl:null,flash:null,anim:0,ax:new Set(),lastFull:null};
+ const n=q.w*q.h,lesson=q.kind==='lesson',pr=lesson?{best:(S.prog[q.id]||{}).best}:(S.prog[q.id]||{});// a lesson never resumes half-done
+ G={q,w:q.w,h:q.h,n,sol:q.grid,st:new Int8Array(n).fill(-1),giv:new Set(q.gv||[]),err:new Set(),clues:LS.cluesOf(q.grid,q.w,q.h),tool:1,undo:[],redo:[],t:pr.t||0,mis:pr.m||0,hints:pr.h||0,z:1,px:0,py:0,done:!!pr.done,hl:null,flash:null,anim:0,ax:new Set(),lastFull:null,ls:lesson?0:null,nudge:null,allowed:null};
  if(pr.s&&pr.s.length===n&&!pr.done){for(let i=0;i<n;i++){const ch=pr.s[i];G.st[i]=ch==='.'?-1:ch==='x'||ch==='a'||ch==='!'?0:ch.charCodeAt(0)-48;if(ch==='!')G.err.add(i);if(ch==='a')G.ax.add(i);}}
  for(const i of G.giv)G.st[i]=G.sol[i];
  if(pr.done)for(let i=0;i<n;i++)G.st[i]=G.sol[i]||0;
  if(q.kind==='pack'){S.last=q.id;}
  save();
- $('pa').textContent=G.done||q.kind!=='pack'?q.name:'No. '+(q.idx+1);
- $('pb').textContent=(q.kind==='pack'?q.pack.name+' · ':q.kind==='daily'?'Today · ':'Endless · ')+q.w+' × '+q.h;
+ $('pa').textContent=lesson?(G.done?q.name:'Lesson '+(q.idx+1)):G.done||q.kind!=='pack'?q.name:'No. '+(q.idx+1);
+ $('pb').textContent=(q.kind==='pack'?q.pack.name+' · ':q.kind==='daily'?'Today · ':lesson?'Learn · ':'Endless · ')+q.w+' × '+q.h;
  $('pbackL').textContent=from==='pack'?q.pack.name:'Lattice';
- buildPalette();show('play');measure();layoutBoard();updLines(true);G.lastFull=fullFlags();updUI();
+ lessonGate();lessonUI();buildPalette();show('play');measure();layoutBoard();updLines(true);G.lastFull=fullFlags();updUI();
  timerOn=true;lastTick=performance.now();
  if(G.done){showDone(true);}
  if(!S.coach&&q.kind==='pack'&&q.idx===0&&q.pi===0)setTimeout(coach,500);}
-function leavePlay(){persist();timerOn=false;hideDone();G=null;}
+function leavePlay(){persist();timerOn=false;hideDone();G=null;lessonUI();}
 $('pback').onclick=()=>{haptic();goHome();};
 
 // 2026-10-28: pictures no longer come with pre-filled squares. Saves started before that still hold those squares as filled, so clear them once.
@@ -530,13 +560,13 @@ const OLD_GIVENS={"first:anchor":[60],"garden:tulip":[61],"garden:cherries":[25,
 function dropOldGivens(){if(S.v2g)return;for(const id in OLD_GIVENS){const pr=S.prog[id];if(!pr||pr.done||!pr.s)continue;const a=pr.s.split('');for(const i of OLD_GIVENS[id])if(i<a.length)a[i]='.';pr.s=a.join('');}S.v2g=1;save(true);}
 dropOldGivens();
 function stateStr(){let s='';for(let i=0;i<G.n;i++){const v=G.st[i];s+=G.err.has(i)?'!':v<0?'.':v===0?(G.ax.has(i)?'a':'x'):String.fromCharCode(48+v);}return s;}
-function persist(){if(!G)return;const pr=S.prog[G.q.id]||(S.prog[G.q.id]={});if(!G.done){pr.s=stateStr();pr.t=G.t;pr.m=G.mis;pr.h=G.hints;}save();}
+function persist(){if(!G||G.q.kind==='lesson')return;const pr=S.prog[G.q.id]||(S.prog[G.q.id]={});if(!G.done){pr.s=stateStr();pr.t=G.t;pr.m=G.mis;pr.h=G.hints;}save();}
 
-function buildPalette(){const p=$('pal');p.innerHTML='';
- G.q.colors.forEach((c,i)=>{const b=el('button','chip'+(G.tool===i+1?' on':''));const sw=el('i');sw.style.background=colourOf(c);b.append(sw);b.setAttribute('aria-label',c==='ink'?'Fill':'Colour '+(i+1));
-  b.onclick=()=>{haptic();G.tool=i+1;buildPalette();};p.append(b);});
- const x=el('button','chip x'+(G.tool===0?' on':''),'<i><svg class="i" viewBox="0 0 24 24" style="width:16px;height:16px"><path d="M6 6l12 12M18 6L6 18"/></svg></i>');x.setAttribute('aria-label','Cross');
- x.onclick=()=>{haptic();G.tool=0;buildPalette();};p.append(x);}
+function buildPalette(){const p=$('pal');p.innerHTML='';const need=lessonTool();
+ G.q.colors.forEach((c,i)=>{const b=el('button','chip'+(G.tool===i+1?' on':'')+(need===i+1&&G.tool!==need?' want':''));const sw=el('i');sw.style.background=colourOf(c);b.append(sw);b.setAttribute('aria-label',c==='ink'?'Fill':'Colour '+(i+1));
+  b.onclick=()=>{haptic();G.tool=i+1;lessonPick();buildPalette();};p.append(b);});
+ const x=el('button','chip x'+(G.tool===0?' on':'')+(need===0&&G.tool!==0?' want':''),'<i><svg class="i" viewBox="0 0 24 24" style="width:16px;height:16px"><path d="M6 6l12 12M18 6L6 18"/></svg></i>');x.setAttribute('aria-label','Cross');
+ x.onclick=()=>{haptic();G.tool=0;lessonPick();buildPalette();};p.append(x);}
 
 // ---- geometry: base cell size fits the whole board; zoom and pan move the cells, and the clue bands follow along one axis
 let L={};
@@ -544,7 +574,7 @@ function clueLen(lst){return lst.reduce((m,c)=>Math.max(m,c.length),0)||1;}
 function layoutBoard(keep){const st=$('stage'),r=st.getBoundingClientRect();const sw=r.width,sh=r.height;if(!sw||!sh)return;
  cv.width=Math.round(sw*DPR);cv.height=Math.round(sh*DPR);cv.style.width=sw+'px';cv.style.height=sh+'px';
  const rc=clueLen(G.clues.rows),cc=clueLen(G.clues.cols),pad=12;
- let s=20;for(let k=0;k<4;k++){const slot=Math.max(14,Math.min(26,s*.82));const bw=sw-pad*2-rc*slot,bh=sh-pad*2-cc*slot;s=Math.max(6,Math.min(bw/G.w,bh/G.h,64));}
+ let s=20;for(let k=0;k<4;k++){const slot=Math.max(14,Math.min(26,s*.82));const bw=sw-pad*2-rc*slot,bh=sh-pad*2-cc*slot;s=Math.max(6,Math.min(bw/G.w,bh/G.h,G.q.kind==='lesson'?100:64));}
  s=Math.floor(s*DPR)/DPR;const slot=Math.max(14,Math.min(26,s*.82));
  const cw=rc*slot,ch=cc*slot,bw=s*G.w,bh=s*G.h;
  let bx=Math.round((sw-(cw+bw))/2+cw),by=Math.round((sh-(ch+bh))/2+ch);
@@ -582,6 +612,9 @@ function render(){if(!G)return;const D=DPR,x=cx;x.setTransform(1,0,0,1,0,0);x.cl
  // highlight bands (finger row/column, hint line)
  const band=(axis,k,col)=>{x.fillStyle=col;if(axis===0)x.fillRect(P(Math.max(0,ox-L.cw)),Y(k),x1-P(Math.max(0,ox-L.cw)),Y(k+1)-Y(k));else x.fillRect(X(k),P(Math.max(0,oy-L.ch)),X(k+1)-X(k),y1-P(Math.max(0,oy-L.ch)));};
  if(G.hl&&!G.done){const c=TH.dark?'rgba(217,170,94,.08)':'rgba(168,120,42,.08)';band(0,G.hl[1],c);band(1,G.hl[0],c);}
+ // a lesson step's row or column glows until the step is done
+ const fo=G.done||G.ls==null?[]:(lStep().focus||[]);for(const f of fo)band(f[0],f[1],TH.dark?'rgba(217,170,94,.2)':'rgba(168,120,42,.16)');
+ const fRows=new Set(fo.filter(f=>f[0]===0).map(f=>f[1])),fCols=new Set(fo.filter(f=>f[0]===1).map(f=>f[1]));
  if(G.flash&&G.flash.lines){x.globalAlpha=G.flash.a;for(const ln of G.flash.lines)band(ln[0],ln[1],TH.dark?'rgba(217,170,94,.24)':'rgba(168,120,42,.2)');x.globalAlpha=1;}
  // cells
  const xs=[],ys=[];for(let i=0;i<=G.w;i++)xs.push(X(i));for(let j=0;j<=G.h;j++)ys.push(Y(j));
@@ -609,11 +642,11 @@ function render(){if(!G)return;const D=DPR,x=cx;x.setTransform(1,0,0,1,0,0);x.cl
    else{x.globalAlpha=(1-fade)*(done?.3:1);x.fillStyle=hot?TH.gold:TH.ink;}
    x.font=`${n>9?600:600} ${n>9?Math.round(fsx*.86):fsx}px -apple-system,BlinkMacSystemFont,system-ui,sans-serif`;x.fillText(String(n),Math.round(cxp),Math.round(cyp+D*.5));x.globalAlpha=1-fade;};
   // rows
-  for(let j=0;j<G.h;j++){const cy=(ys[j]+ys[j+1])/2;if(cy<ty+bandH-2||cy>cv.height)continue;const cl=G.clues.rows[j],stt=LS_ROWS[j]||{ok:[]},hot=G.hl&&G.hl[1]===j;
+  for(let j=0;j<G.h;j++){const cy=(ys[j]+ys[j+1])/2;if(cy<ty+bandH-2||cy>cv.height)continue;const cl=G.clues.rows[j],stt=LS_ROWS[j]||{ok:[]},hot=!!(G.hl&&G.hl[1]===j)||fRows.has(j);
    if(hot){x.fillStyle=TH.dark?'rgba(217,170,94,.10)':'rgba(168,120,42,.10)';x.fillRect(lx,ys[j],bandW,ys[j+1]-ys[j]);}
    if(!cl.length){x.fillStyle=TH.ink3;x.font=`500 ${fsx}px -apple-system,system-ui,sans-serif`;x.fillText('0',lx+bandW-sl/2,cy);continue;}
    for(let q=0;q<cl.length;q++){const px=lx+bandW-(cl.length-q-.5)*sl-P(3);drawNum(cl[q][0],cl[q][1],px,cy,stt.ok[q],hot);}}
-  for(let i=0;i<G.w;i++){const cxp=(xs[i]+xs[i+1])/2;if(cxp<lx+bandW-2||cxp>cv.width)continue;const cl=G.clues.cols[i],stt=LS_COLS[i]||{ok:[]},hot=G.hl&&G.hl[0]===i;
+  for(let i=0;i<G.w;i++){const cxp=(xs[i]+xs[i+1])/2;if(cxp<lx+bandW-2||cxp>cv.width)continue;const cl=G.clues.cols[i],stt=LS_COLS[i]||{ok:[]},hot=!!(G.hl&&G.hl[0]===i)||fCols.has(i);
    if(hot){x.fillStyle=TH.dark?'rgba(217,170,94,.10)':'rgba(168,120,42,.10)';x.fillRect(xs[i],ty,xs[i+1]-xs[i],bandH);}
    if(!cl.length){x.fillStyle=TH.ink3;x.font=`500 ${fsx}px -apple-system,system-ui,sans-serif`;x.fillText('0',cxp,ty+bandH-sl/2);continue;}
    for(let q=0;q<cl.length;q++){const py=ty+bandH-(cl.length-q-.5)*sl-P(3);drawNum(cl[q][0],cl[q][1],cxp,py,stt.ok[q],hot);}}
@@ -637,6 +670,7 @@ cv.addEventListener('pointerdown',e=>{if(!G||G.done)return;e.preventDefault();cv
  if(i<0||j<0||i>=G.w||j>=G.h){// a tap on a clue highlights its line
   const s=cell(),[ox,oy]=origin();if(px<ox&&j>=0&&j<G.h){G.hl=[-1,j];draw();}else if(py<oy&&i>=0&&i<G.w){G.hl=[i,-1];draw();}return;}
  const k=j*G.w+i;if(G.giv.has(k)){G.hl=[i,j];draw();drag={none:true,start:[i,j],cells:new Map(),t0:performance.now(),len:0,bub:[px,py-48]};return;}
+ if(G.allowed&&!G.allowed.has(k)){drag={none:true,start:[i,j],cells:new Map(),t0:performance.now(),len:0,bub:[px,py-48]};lessonBlocked();return;}// a lesson: only the step's squares can be marked
  const v=G.st[k],tool=G.tool;let mode,from=v;
  if(tool>0){mode=v===tool?'clear':'paint';}else{mode=v===0?'clear':'cross';}
  drag={mode,tool,from,start:[i,j],axis:null,cells:new Map(),t0:performance.now(),len:1,bub:[px,py-48],ended:false};
@@ -655,12 +689,12 @@ cv.addEventListener('pointermove',e=>{if(!G||!ptrs.has(e.pointerId))return;e.pre
 function upPtr(e){if(!ptrs.has(e.pointerId))return;ptrs.delete(e.pointerId);if(pinch){if(ptrs.size<2){pinch=null;if(G&&G.z<1.04){G.z=1;clampView();draw();}}return;}
  if(drag)endDrag();if(G){G.hl=null;draw();}}
 cv.addEventListener('pointerup',upPtr);cv.addEventListener('pointercancel',upPtr);cv.addEventListener('lostpointercapture',upPtr);
-function eligible(k){const v=G.st[k];if(G.giv.has(k))return false;const d=drag;
+function eligible(k){const v=G.st[k];if(G.giv.has(k))return false;if(G.allowed&&!G.allowed.has(k))return false;const d=drag;
  if(d.mode==='paint')return v===-1||v===d.from;if(d.mode==='cross')return v===-1||v===d.from;if(d.mode==='clear')return v===d.from;return false;}
 function applyCell(k,first,order){if(!eligible(k))return;const prev=G.st[k];let next;const d=drag;
  if(d.mode==='paint')next=d.tool;else if(d.mode==='cross')next=0;else next=-1;
  if(prev===next)return;d.cells.set(k,prev);G.st[k]=next;G.err.delete(k);
- if(S.set.check&&next>=0&&next!==G.sol[k]&&!(next===0&&G.sol[k]===0)){// checked play: a wrong mark becomes the right one, in red, and the stroke stops
+ if(chkOn()&&next>=0&&next!==G.sol[k]&&!(next===0&&G.sol[k]===0)){// checked play: a wrong mark becomes the right one, in red, and the stroke stops
   G.mis++;G.st[k]=G.sol[k]>0?G.sol[k]:0;if(G.sol[k]===0)G.err.add(k);d.ended=true;SFX.bad();haptic();flashCells([k],true);updUI();return;}
  if(next>0)SFX.fill(order);else if(next===0)SFX.cross();else SFX.erase();haptic();}
 function revertDrag(){if(!drag)return;for(const[k,prev]of drag.cells)G.st[k]=prev;drag=null;draw();}
@@ -670,21 +704,21 @@ function endDrag(){const d=drag;drag=null;if(!d||d.none||!d.cells.size){draw();r
 // An undo record holds only the player's own squares ([k, prev, next, prev was an auto cross]); the auto crosses are worked out after.
 function commit(rec,quiet){const newly=updLines();autoX();
  if(newly.length&&!quiet){SFX.line();haptic();if(!G.flash)flashCells([],false,newly,600);}
- G.undo.push(rec);if(G.undo.length>400)G.undo.shift();G.redo=[];persist();updUI();draw();checkSolved();}
+ G.undo.push(rec);if(G.undo.length>400)G.undo.shift();G.redo=[];persist();updUI();draw();checkSolved();lessonCheck();}
 function fullFlags(){return LS_ROWS.map(r=>r.full).concat(LS_COLS.map(c=>c.full));}
 // Cross finished lines: a line that becomes finished gets its unknown squares crossed (G.ax remembers which);
 // those crosses go again as soon as neither of their lines is finished, whether by a removed square, an undo or a hint
 function autoX(){const now=fullFlags(),was=G.lastFull||now;let ch=false;
  for(const k of G.ax){if(G.st[k]!==0){G.ax.delete(k);continue;}if(!now[k/G.w|0]&&!now[G.h+k%G.w]){G.st[k]=-1;G.ax.delete(k);ch=true;}}
- if(S.set.autox){const fill=k=>{if(G.st[k]===-1){G.st[k]=0;G.ax.add(k);ch=true;}};
+ if(axOn()){const fill=k=>{if(G.st[k]===-1){G.st[k]=0;G.ax.add(k);ch=true;}};
   for(let y=0;y<G.h;y++)if(now[y]&&!was[y])for(let x=0;x<G.w;x++)fill(y*G.w+x);
   for(let x=0;x<G.w;x++)if(now[G.h+x]&&!was[G.h+x])for(let y=0;y<G.h;y++)fill(y*G.w+x);}
  G.lastFull=now;if(ch)updLines(true);}
-$('bUndo').onclick=()=>{if(!G||G.done||!G.undo.length)return;haptic();const rec=G.undo.pop();for(let i=rec.length-1;i>=0;i--){const[k,prev,,wasA]=rec[i];G.st[k]=prev;if(wasA)G.ax.add(k);else G.ax.delete(k);}G.redo.push(rec);updLines(true);autoX();persist();updUI();draw();SFX.erase();};
-$('bRedo').onclick=()=>{if(!G||G.done||!G.redo.length)return;haptic();const rec=G.redo.pop();for(const[k,,next]of rec){G.st[k]=next;G.ax.delete(k);}G.undo.push(rec);updLines(true);autoX();persist();updUI();draw();SFX.fill(0);checkSolved();};
+$('bUndo').onclick=()=>{if(!G||G.done||!G.undo.length)return;haptic();const rec=G.undo.pop();for(let i=rec.length-1;i>=0;i--){const[k,prev,,wasA]=rec[i];G.st[k]=prev;if(wasA)G.ax.add(k);else G.ax.delete(k);}G.redo.push(rec);updLines(true);autoX();persist();updUI();draw();SFX.erase();lessonCheck();};
+$('bRedo').onclick=()=>{if(!G||G.done||!G.redo.length)return;haptic();const rec=G.redo.pop();for(const[k,,next]of rec){G.st[k]=next;G.ax.delete(k);}G.undo.push(rec);updLines(true);autoX();persist();updUI();draw();SFX.fill(0);checkSolved();lessonCheck();};
 $('bFit').onclick=()=>{if(!G)return;haptic();G.z=G.z>1.01?1:Math.min(3,Math.max(1.8,22/L.s0));G.px=G.z>1?-(G.w*L.s0*(G.z-1))/2:0;G.py=G.z>1?-(G.h*L.s0*(G.z-1))/2:0;clampView();draw();};
 function updUI(){if(!G)return;$('bUndo').disabled=!G.undo.length;$('bRedo').disabled=!G.redo.length;
- $('mist').textContent=S.set.check&&G.mis?G.mis+(G.mis===1?' mistake':' mistakes'):'';
+ $('mist').textContent=chkOn()&&G.mis?G.mis+(G.mis===1?' mistake':' mistakes'):'';
  $('bFit').classList.toggle('hidden',L.s0>=22&&G.z===1);}
 
 // ---- hints: point out mistakes first; otherwise solve the line that logic can advance most
@@ -700,10 +734,12 @@ let flashRaf=0;function flashCells(cells,bad,lines,ms){G.flash={cells,bad,lines:
 
 // ---- solved
 function checkSolved(){if(G.done)return;let ok=LS_ROWS.every(r=>r.full)&&LS_COLS.every(c=>c.full);if(!ok)return;
- G.done=true;drag=null;const q=G.q,pr=S.prog[q.id]||(S.prog[q.id]={});const perfect=!G.mis&&!G.hints;
- const first=!pr.done;pr.done=true;pr.best=pr.best?Math.min(pr.best,G.t):G.t;pr.perfect=pr.perfect||perfect;pr.m=G.mis;pr.h=G.hints;delete pr.s;
+ G.done=true;drag=null;const q=G.q,pr=S.prog[q.id]||(S.prog[q.id]={});const perfect=!G.mis&&!G.hints,lesson=q.kind==='lesson';
+ const first=!pr.done;pr.done=true;pr.best=pr.best?Math.min(pr.best,G.t):G.t;delete pr.s;
+ if(lesson){S.coach=true;G.ls=null;G.nudge=null;G.allowed=null;$('lb').classList.add('gone');}// the lessons replace the coach tips; a lesson isn't counted in the statistics
+ else{pr.perfect=pr.perfect||perfect;pr.m=G.mis;pr.h=G.hints;}
  for(let i=0;i<G.n;i++)G.st[i]=G.sol[i]||0;
- if(first){S.stats.solved++;S.stats.time+=G.t;if(perfect)S.stats.perfect++;}
+ if(first&&!lesson){S.stats.solved++;S.stats.time+=G.t;if(perfect)S.stats.perfect++;}
  if(q.kind==='daily'){S.daily.days[q.key]=1;if(S.daily.last!==q.key){S.daily.streak=S.daily.last===yesterdayOf(q.key)?S.daily.streak+1:1;S.daily.last=q.key;S.daily.best=Math.max(S.daily.best,S.daily.streak);}}
  if(q.kind==='endless'&&first){S.endless.n++;}
  save(true);SFX.solve();haptic();setTimeout(haptic,120);
@@ -713,13 +749,14 @@ function checkSolved(){if(G.done)return;let ok=LS_ROWS.every(r=>r.full)&&LS_COLS
 function yesterdayOf(key){const d=new Date(key+'T12:00:00');d.setDate(d.getDate()-1);return todayKey(d);}
 function showDone(already,perfect){const q=G.q,pr=S.prog[q.id]||{};G.anim=1;draw();
  const d=$('dcv'),sz=isWide()?Math.min(300,Math.round(W/2-60),Math.round(H*.6)):Math.min(260,Math.round(Math.min(W,H)*.48)),c=thumb(q,sz,'pic');d.width=c.width;d.height=c.height;d.style.width=d.style.height=sz+'px';d.getContext('2d').drawImage(c,0,0);
- $('dnm').textContent=q.reveal||q.name;$('dsub').textContent=q.kind==='pack'?q.pack.name+' · No. '+(q.idx+1):q.kind==='daily'?'Today’s picture':'Endless';
+ $('dnm').textContent=q.reveal||q.name;$('dsub').textContent=q.kind==='pack'?q.pack.name+' · No. '+(q.idx+1):q.kind==='daily'?'Today’s picture':q.kind==='lesson'?'Lesson '+(q.idx+1)+' of '+LQ.length+' · '+q.L.title:'Endless';
  $('dtime').textContent=fmtT(already?pr.best:G.t);$('dbest').textContent=fmtT(pr.best);$('dmis').textContent=already?(pr.m||0):G.mis;
  $('dperf').textContent=(already?pr.perfect:perfect)?'Perfect — no mistakes, no hints':'';
- const nx=nextOf(q);$('dnext').textContent=q.kind==='endless'?'Another':nx?'Next':'Done';$('dnext').classList.toggle('hidden',q.kind==='daily');$('dback').textContent=q.kind==='pack'?'Collection':'Home';
+ const nx=nextOf(q);$('dnext').textContent=q.kind==='endless'?'Another':q.kind==='lesson'?(q.idx+1<LQ.length?'Next lesson':'Start playing'):nx?'Next':'Done';$('dnext').classList.toggle('hidden',q.kind==='daily');$('dback').textContent=q.kind==='pack'?'Collection':'Home';
  $('doneBg').classList.add('on');$('done').classList.add('on');}
 function hideDone(){$('doneBg').classList.remove('on');$('done').classList.remove('on');}
-function nextOf(q){if(q.kind!=='pack')return null;const ps=q.pack.puzzles;for(let k=1;k<=ps.length;k++){const n=ps[(q.idx+k)%ps.length];if(!(S.prog[n.id]||{}).done)return n;}const pi=(q.pi+1)%PACKS.length;return PACKS[pi].puzzles.find(n=>!(S.prog[n.id]||{}).done)||null;}
+function nextOf(q){if(q.kind==='lesson'){if(q.idx+1<LQ.length)return LQ[q.idx+1];const p=PACKS[0];return p?(p.puzzles.find(n=>!(S.prog[n.id]||{}).done)||p.puzzles[0]):null;}
+ if(q.kind!=='pack')return null;const ps=q.pack.puzzles;for(let k=1;k<=ps.length;k++){const n=ps[(q.idx+k)%ps.length];if(!(S.prog[n.id]||{}).done)return n;}const pi=(q.pi+1)%PACKS.length;return PACKS[pi].puzzles.find(n=>!(S.prog[n.id]||{}).done)||null;}
 $('dnext').onclick=()=>{haptic();const q=G.q;hideDone();if(q.kind==='endless'){newEndless();return;}const n=nextOf(q);if(!n){goHome();return;}if(n.pack!==q.pack)packSel=n.pack;startPuzzle(n,lastFrom);};
 $('dback').onclick=()=>{haptic();hideDone();goHome();};
 
@@ -762,26 +799,31 @@ async function bkOffer(){if(!BK_ON||Q.get('test')||localStorage.getItem('lattice
   const a=el('button','big','Restore it');a.onclick=()=>bkRestore(e);const b=el('button','big ghost','Start fresh');b.onclick=closeSheet;const w=el('div','bkbtns');w.append(a,b);o.append(w);});}
 
 // ---------------------------------------------------------------- sheets
-function openSheet(build){const o=$('sheetIn');o.innerHTML='';build(o);$('sheet').classList.add('on');$('veil').classList.add('on');$('sheet').querySelector('.scroll').scrollTop=0;}
+function openSheet(build){const o=$('sheetIn');o.innerHTML='';$('sheet').classList.remove('split');build(o);$('sheet').classList.add('on');$('veil').classList.add('on');$('sheet').querySelector('.scroll').scrollTop=0;}
 function closeSheet(){$('sheet').classList.remove('on');$('veil').classList.remove('on');}
 $('veil').onclick=closeSheet;
 (()=>{let y0=null;const sh=$('sheet');sh.addEventListener('touchstart',e=>{if(e.target.closest('.grab'))y0=e.touches[0].clientY;},{passive:true});sh.addEventListener('touchmove',e=>{if(y0!==null&&e.touches[0].clientY-y0>60){y0=null;closeSheet();}},{passive:true});sh.addEventListener('touchend',()=>y0=null);})();
 function togRow(o,label,desc,key,after){const r=el('div','opt'),l=el('div','',`<div class="l">${label}</div>${desc?`<div class="d">${desc}</div>`:''}`),t=el('button','tog'+(S.set[key]?' on':''));t.setAttribute('role','switch');t.setAttribute('aria-checked',S.set[key]);
  t.onclick=()=>{S.set[key]=!S.set[key];t.classList.toggle('on',S.set[key]);haptic();save();after&&after();};r.append(l,t);o.append(r);}
-function openSettings(){openSheet(o=>{o.append(el('h4','','Settings'));
+function openSettings(){openSheet(o=>{
+ // wide (the opened Duo, a tablet): Settings spans both pages in two columns, split at the middle, so it fits without scrolling
+ const split=isWide();$('sheet').classList.toggle('split',split);let A=o,B=o;
+ if(split){const g=el('div','cols'),a=el('div','cp'),b=el('div','cp');g.append(a,b);o.append(g);A=a;B=b;}
+ A.append(el('h4','','Settings'));
  // the hint lives here, off the board, so a swipe up to switch apps can't use one
- if(G&&!G.done){const h=el('button','big ghost hintb','Show a hint'+(G.hints?` <span>· ${G.hints} used</span>`:''));h.onclick=()=>{closeSheet();setTimeout(()=>$('bHint').onclick(),280);};o.append(h);}
- const r=el('div','opt');r.append(el('div','l','Appearance'));const sg=el('div','seg');[['auto','Auto'],['paper','Paper'],['ink','Ink']].forEach(([k,l])=>{const b=el('button',S.set.theme===k?'on':'',l);b.onclick=()=>{S.set.theme=k;save();applyTheme();haptic();sg.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));renderHome();};sg.append(b);});r.append(sg);o.append(r);
- togRow(o,'Check as I go','A wrong square is corrected at once and counted as a mistake','check',()=>{if(G)updUI();});
- togRow(o,'Cross finished lines','Fills the rest of a solved row or column with crosses','autox');
- togRow(o,'Sound','','sound');
- togRow(o,'Sound when the phone is on silent','','silent',()=>{try{if(navigator.audioSession)navigator.audioSession.type=S.set.silent?'playback':'ambient';}catch(_){}});
- togRow(o,'Haptics','','haptic');
- {const r=el('div','opt col'),l=el('div','',`<div class="l">Ambience</div><div class="d">Quiet background sound while you play</div>`),sg=el('div','seg');AMB.forEach(([k,n])=>{const b=el('button',S.set.amb===k?'on':'',n);b.onclick=()=>{S.set.amb=k;save();haptic();sg.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));vr.classList.toggle('hide',k==='off');ambStart();};sg.append(b);});const vr=el('div','opt'+(S.set.amb==='off'?' hide':''),'<div class="l">Ambience volume</div>'),v=document.createElement('input');v.type='range';v.min=0;v.max=1;v.step=.05;v.value=S.set.ambv;v.className='rng';v.oninput=()=>{S.set.ambv=+v.value;ambLevel();};v.onchange=()=>save();vr.append(v);r.append(l,sg);o.append(r,vr);}
- if(BK_ON){const r=el('div','opt'),d=el('div','',`<div class="l">Backup</div><div class="d">${bkLast?'Saved to the NAS '+ago(bkLast):'Not backed up yet'}</div>`),b=el('button','lnk','Restore…');b.onclick=()=>{haptic();openRestore();};r.append(d,b);o.append(r);}
- if(G&&!G.done){const b=el('button','danger','Restart this picture');b.onclick=()=>{if(!confirm('Clear this picture and its timer?'))return;const q=G.q;delete S.prog[q.id];save(true);closeSheet();startPuzzle(q,lastFrom);};o.append(b);}
- const z=el('button','danger','Erase all progress');z.onclick=()=>{if(!confirm('Erase every solved picture, streak and statistic?'))return;if(!confirm('This can’t be undone. Erase everything?'))return;const keep=S.set;S=blank();S.set=keep;S.coach=true;save(true);closeSheet();if(G)leavePlay();$('play').classList.add('off-r');$('pack').classList.add('off-r');cur='play';show('home',true);renderHome();};o.append(z);
- o.append(el('div','foot','Lattice · build '+BUILD));});}
+ if(G&&!G.done){const h=el('button','big ghost hintb','Show a hint'+(G.hints?` <span>· ${G.hints} used</span>`:''));h.onclick=()=>{closeSheet();setTimeout(()=>$('bHint').onclick(),280);};A.append(h);}
+ const r=el('div','opt');r.append(el('div','l','Appearance'));const sg=el('div','seg');[['auto','Auto'],['paper','Paper'],['ink','Ink']].forEach(([k,l])=>{const b=el('button',S.set.theme===k?'on':'',l);b.onclick=()=>{S.set.theme=k;save();applyTheme();haptic();sg.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));renderHome();};sg.append(b);});r.append(sg);A.append(r);
+ togRow(A,'Check as I go','A wrong square is corrected at once and counted as a mistake','check',()=>{if(G)updUI();});
+ togRow(A,'Cross finished lines','Fills the rest of a solved row or column with crosses','autox');
+ if(split)B.append(el('h4','','Sound'));
+ togRow(B,'Sound','','sound');
+ togRow(B,'Sound when the phone is on silent','','silent',()=>{try{if(navigator.audioSession)navigator.audioSession.type=S.set.silent?'playback':'ambient';}catch(_){}});
+ togRow(B,'Haptics','','haptic');
+ {const r=el('div','opt col'),l=el('div','',`<div class="l">Ambience</div><div class="d">Quiet background sound while you play</div>`),sg=el('div','seg');AMB.forEach(([k,n])=>{const b=el('button',S.set.amb===k?'on':'',n);b.onclick=()=>{S.set.amb=k;save();haptic();sg.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));vr.classList.toggle('hide',k==='off');ambStart();};sg.append(b);});const vr=el('div','opt'+(S.set.amb==='off'?' hide':''),'<div class="l">Ambience volume</div>'),v=document.createElement('input');v.type='range';v.min=0;v.max=1;v.step=.05;v.value=S.set.ambv;v.className='rng';v.oninput=()=>{S.set.ambv=+v.value;ambLevel();};v.onchange=()=>save();vr.append(v);r.append(l,sg);B.append(r,vr);}
+ if(BK_ON){const r=el('div','opt'),d=el('div','',`<div class="l">Backup</div><div class="d">${bkLast?'Saved to the NAS '+ago(bkLast):'Not backed up yet'}</div>`),b=el('button','lnk','Restore…');b.onclick=()=>{haptic();openRestore();};r.append(d,b);A.append(r);}
+ if(G&&!G.done){const b=el('button','danger','Restart this picture');b.onclick=()=>{if(!confirm('Clear this picture and its timer?'))return;const q=G.q;delete S.prog[q.id];save(true);closeSheet();startPuzzle(q,lastFrom);};A.append(b);}
+ const z=el('button','danger','Erase all progress');z.onclick=()=>{if(!confirm('Erase every solved picture, streak and statistic?'))return;if(!confirm('This can’t be undone. Erase everything?'))return;const keep=S.set;S=blank();S.set=keep;S.coach=true;save(true);closeSheet();if(G)leavePlay();$('play').classList.add('off-r');$('pack').classList.add('off-r');cur='play';show('home',true);renderHome();};B.append(z);
+ B.append(el('div','foot','Lattice · build '+BUILD));});}
 $('pmenu').onclick=()=>{haptic();openSettings();};
 function openStats(){openSheet(o=>{o.append(el('h4','','Statistics'));let solved=0,perfect=0,time=0;ALL.forEach(q=>{const p=S.prog[q.id];if(p&&p.done){solved++;if(p.perfect)perfect++;time+=p.best||0;}});
  const g=el('div','stats');[[solved+' / '+ALL.length,'pictures solved'],[perfect,'perfect solves'],[S.daily.streak,'day streak'],[S.daily.best,'longest streak'],[S.endless.n,'endless pictures'],[fmtT(S.stats.time),'time solving']].forEach(([b,s])=>g.append(el('div','stat',`<b>${b}</b><span>${s}</span>`)));o.append(g);
@@ -794,6 +836,89 @@ let coachI=0;function coach(){coachI=0;$('coach').classList.add('on');coachShow(
 function coachShow(){$('coachT').textContent=COACH[coachI];$('coachN').textContent=(coachI+1)+' of '+COACH.length;$('coachB').textContent=coachI<COACH.length-1?'Next':'Start';}
 $('coachB').onclick=()=>{haptic();coachI++;if(coachI>=COACH.length){$('coach').classList.remove('on');S.coach=true;save();}else coachShow();};
 
+// ---------------------------------------------------------------- Learn: six tiny guided lessons (the app's Lessons.swift, word for word)
+// A step lights a row or column, says what to do, and only lets the squares it is about be marked. act: 'info' (read, then Next; the
+// board is locked), 'fill' / 'cross' (exactly these squares, with that tool picked), 'free' (solve the rest; Check as I go is on).
+// focus: [axis, index] with axis 0 = row, 1 = column. Lessons and the Starter collections always play with Check as I go and Cross
+// finished lines on. Progress is saved as learn:<id> like any picture, so the NAS backup shares it with the app.
+const lr=(w,y,xs)=>xs.map(x=>y*w+x),lc=(w,x,ys)=>ys.map(y=>y*w+x);
+const LESSONS=[
+ {id:'full',title:'Big numbers',picture:'Letter T',w:3,h:3,rows:['###','.#.','.#.'],steps:[
+  {text:'Each number says how many squares to fill. This row says 3, and it is 3 squares long. Fill them all! Drag your finger along the row.',focus:[[0,0]],act:'fill',cells:lr(3,0,[0,1,2])},
+  {text:'This column says 3 as well. Fill the rest of it.',focus:[[1,1]],act:'fill',cells:lc(3,1,[1,2])}]},
+ {id:'zero',title:'Zero means empty',picture:'Fence',w:5,h:5,rows:['#.#.#','#.#.#','#.#.#','#.#.#','#.#.#'],steps:[
+  {text:'This column says 5, and it is 5 squares tall. Fill it all the way down.',focus:[[1,0]],act:'fill',cells:lc(5,0,[0,1,2,3,4])},
+  {text:'The next column says 0. Zero means none of its squares are filled.',focus:[[1,1]],act:'info'},
+  {text:'Tap the ✕ button. Then drag down the column to cross it out. A cross means “empty”.',focus:[[1,1]],act:'cross',cells:lc(5,1,[0,1,2,3,4])},
+  {text:'Tap the black square button to fill again. The other columns that say 5 can be filled all the way.',focus:[[1,2],[1,4]],act:'fill',cells:lc(5,2,[0,1,2,3,4]).concat(lc(5,4,[0,1,2,3,4]))}]},
+ {id:'middle',title:'The middle trick',picture:'Sailboat',w:5,h:5,rows:['..#..','..##.','..#..','#####','.###.'],steps:[
+  {text:'The bottom row says 3, but it has 5 squares. Imagine sliding the 3 to the left, then to the right. The middle square is filled both times, so fill just the middle.',focus:[[0,4]],act:'fill',cells:[22]},
+  {text:'This row says 5. Fill it all.',focus:[[0,3]],act:'fill',cells:lr(5,3,[0,1,2,3,4])},
+  {text:'Look! The first and last columns only needed 1, so they are finished, and the game crossed out the rest of them for you.',focus:[[1,0],[1,4]],act:'info'},
+  {text:'Now the bottom row has only 3 squares left for its 3. Fill them.',focus:[[0,4]],act:'fill',cells:[21,23]},
+  {text:'Now finish the boat on your own. Wrong squares turn red, so you can\'t go far wrong.',focus:[],act:'free'}]},
+ {id:'gap',title:'Two numbers',picture:'Castle',w:5,h:5,rows:['#.#.#','#####','#####','##.##','##.##'],steps:[
+  {text:'Two numbers mean two groups, with at least one empty square between them. 2, a gap, then 2 makes 5: the whole row! Fill 2, skip 1, fill 2.',focus:[[0,3]],act:'fill',cells:lr(5,3,[0,1,3,4])},
+  {text:'This row is the same. Fill 2, skip 1, fill 2.',focus:[[0,4]],act:'fill',cells:lr(5,4,[0,1,3,4])},
+  {text:'1, gap, 1, gap, 1 also fills exactly 5. Fill every other square.',focus:[[0,0]],act:'fill',cells:lr(5,0,[0,2,4])},
+  {text:'Finish the castle on your own.',focus:[],act:'free'}]},
+ {id:'cross',title:'Rows and columns',picture:'Arrow',w:5,h:5,rows:['..#..','.###.','#####','..#..','..#..'],steps:[
+  {text:'There are two 5s: a row and a column. Fill them both.',focus:[[0,2],[1,2]],act:'fill',cells:lr(5,2,[0,1,2,3,4]).concat(lc(5,2,[0,1,3,4]))},
+  {text:'These rows only need 1, and they have it already. So the rest of them got crossed out.',focus:[[0,0],[0,3],[0,4]],act:'info'},
+  {text:'This column says 2. Only one square is left beside the filled one. Fill it!',focus:[[1,1]],act:'fill',cells:[6]},
+  {text:'This column is just the same. Fill the last square.',focus:[[1,3]],act:'fill',cells:[8]}]},
+ {id:'solo',title:'Your turn',picture:'House',w:5,h:5,rows:['..#..','.###.','#####','##.##','##.##'],steps:[
+  {text:'Solve this one by yourself. Start with the biggest numbers. Stuck? Tap the light bulb for a hint.',focus:[],act:'free'}]}];
+const LQ=LESSONS.map((L,i)=>({id:'learn:'+L.id,kind:'lesson',idx:i,name:L.picture,w:L.w,h:L.h,colors:['ink'],grid:Array.from(L.rows.join(''),c=>c==='#'?1:0),L}));
+LESSONS.forEach(L=>L.steps.forEach(s=>{s.tool=s.act==='fill'?1:s.act==='cross'?0:null;}));
+function lessonsDone(){return LQ.filter(q=>(S.prog[q.id]||{}).done).length;}
+function nextLessonIdx(){const i=LQ.findIndex(q=>!(S.prog[q.id]||{}).done);return i<0?0:i;}// the first unfinished one, or the first when all are done
+function startLesson(i){startPuzzle(LQ[i],'home');}
+function learnCard(){const done=lessonsDone(),all=LQ.length,fin=done===all,nx=nextLessonIdx();
+ const c=el('button','card');c.append(el('div','lic','<svg class="i" viewBox="0 0 24 24"><path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11.5V16c0 1.5 3 3 6 3s6-1.5 6-3v-4.5"/><path d="M22 9v6"/></svg>'));
+ const g=el('div','grow');g.innerHTML=`<div class="t1">${fin?'Lessons':done===0?'Learn to play':'Keep learning'}</div><div class="t2">${fin?'All '+all+' done · play them again':'Lesson '+(nx+1)+' of '+all+' · '+LQ[nx].L.title}</div>`;
+ const wk=el('div','week');LQ.forEach(q=>wk.append(el('i',(S.prog[q.id]||{}).done?'on':'')));g.append(wk);c.append(g);c.insertAdjacentHTML('beforeend',CHEV);
+ c.onclick=()=>{haptic();startLesson(fin?0:nx);};return c;}
+// Starter collections and the lessons always play with Check as I go and Cross finished lines on, whatever the settings say
+function helpOn(){return !!G&&(G.q.kind==='lesson'||(G.q.kind==='pack'&&G.q.pack.tier==='Starter'));}
+function chkOn(){return S.set.check||helpOn();}
+function axOn(){return S.set.autox||helpOn();}
+function lStep(){return G&&G.ls!=null?G.q.L.steps[Math.min(G.ls,G.q.L.steps.length-1)]:null;}
+function stepDone(s){return s.act==='fill'?s.cells.every(k=>G.st[k]>0):s.act==='cross'?s.cells.every(k=>G.st[k]===0):false;}
+// opens only the squares the step is about, and only once the right tool is picked (a step never switches the tool: tapping the chip is the lesson)
+function lessonGate(){if(!G)return;const s=lStep();if(!s){G.allowed=null;return;}
+ G.allowed=s.act==='info'?new Set():s.act==='free'?null:G.tool===s.tool?new Set(s.cells):new Set();}
+function lessonTool(){const s=!G||G.done?null:lStep();return s?s.tool:null;}// the tool the step needs, for the pulsing chip
+function lessonPick(){if(G&&G.ls!=null){lessonGate();G.nudge=null;lessonUI();}}
+// a finished step locks the board and moves on after 450 ms
+function lessonCheck(){if(!G||G.ls==null||G.done)return;const i=G.ls,s=lStep(),g=G;if(!stepDone(s))return;G.allowed=new Set();
+ setTimeout(()=>{if(G===g&&G.ls===i)advanceLesson();},450);}
+function advanceLesson(){if(!G||G.ls==null||G.done)return;haptic();const LE=G.q.L,n=G.ls+1;if(n>=LE.steps.length)return;
+ G.ls=n;G.nudge=null;const s=LE.steps[n];lessonGate();if(s.focus.length)flashCells([],false,s.focus,900);lessonUI();buildPalette();draw();
+ if(stepDone(s))lessonCheck();}// a step already done by the game's own crosses moves straight on
+function lessonBlocked(){const s=lStep();if(!s)return;haptic();
+ if(s.act==='info')G.nudge='Read this, then tap Next.';
+ else if(s.act==='free')G.nudge=null;
+ else G.nudge=G.tool!==s.tool?(s.tool===0?'First tap the ✕ button.':'First tap the black square button.'):'Try the glowing squares.';
+ if(s.focus.length)flashCells([],false,s.focus,900);lessonUI();}
+// the words above the board: which lesson, the step dots, what to do now, a nudge after a wrong touch, Next on a reading step
+function lessonUI(){const b=$('lb'),hb=$('bHint');
+ if(!G||G.ls==null){b.classList.add('hidden');b.classList.remove('gone');hb.classList.remove('show');return;}
+ const LE=G.q.L,s=lStep(),h0=b.classList.contains('hidden')?-1:b.offsetHeight;
+ if(b.dataset.q!==G.q.id){b.dataset.q=G.q.id;
+  b.innerHTML='<div class="lh"><div class="lk"></div><div class="ld"></div></div><div class="lt"></div><div class="ln"></div><button class="lnx">Next</button>';
+  b.querySelector('.lk').textContent='Lesson '+(G.q.idx+1)+' of '+LQ.length+' · '+LE.title;
+  if(LE.steps.length>1)LE.steps.forEach(()=>b.querySelector('.ld').append(el('i')));
+  const lt=b.querySelector('.lt');LE.steps.forEach(st=>{const p=el('p');p.textContent=st.text;lt.append(p);});// every step's words stack in one cell, so the box keeps the height of the longest
+  b.querySelector('.lnx').onclick=advanceLesson;}
+ b.classList.remove('hidden','gone');
+ b.querySelectorAll('.ld i').forEach((d,k)=>d.classList.toggle('on',k<=G.ls));
+ b.querySelectorAll('.lt p').forEach((p,k)=>p.classList.toggle('on',k===G.ls));
+ const ln=b.querySelector('.ln');ln.textContent=G.nudge||'';
+ b.querySelector('.lnx').classList.toggle('none',s.act!=='info');
+ hb.classList.toggle('show',s.act==='free');
+ if(b.offsetHeight!==h0&&L.sw)layoutBoard(true);}
+
 // ---------------------------------------------------------------- updates: reload onto a new build when it's safe
 async function checkVersion(){try{if(cur==='play'&&G&&!G.done)return;const r=await fetch('./index.html?vc='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/const BUILD='([^']+)'/);if(m&&m[1]!==BUILD){persist();save(true);location.reload();}}catch(_){}}
 if('serviceWorker'in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
@@ -804,7 +929,7 @@ if(document.fonts&&document.fonts.load){document.fonts.load('600 40px Cormorant'
 setTimeout(diag,1500);setTimeout(checkVersion,4000);
 window.__G=()=>G;window.__lat=()=>({cur,G:G&&{id:G.q.id,z:G.z,s0:L.s0,L,t:G.t,done:G.done},W,H,duoPose,errs:window.__errs});
 // test hooks: ?play=<id>|daily|endless  &solve=1 (all but one cell)  &view=settings|stats
-setTimeout(()=>{const p=Q.get('play');if(p){let q=p==='daily'?dailyPuzzle(todayKey()):p==='endless'?(S.endless.cur={w:+(Q.get('w')||15),h:+(Q.get('w')||15),c:+(Q.get('c')||1),seed:12345},endlessPuzzle()):byId(p);if(q){if(q.pack)packSel=q.pack;startPuzzle(q,'home');
+setTimeout(()=>{const p=Q.get('play');if(p){let q=p==='daily'?dailyPuzzle(todayKey()):p==='endless'?(S.endless.cur={w:+(Q.get('w')||15),h:+(Q.get('w')||15),c:+(Q.get('c')||1),seed:12345},endlessPuzzle()):(byId(p)||LQ.find(x=>x.id===p));if(q){if(q.pack)packSel=q.pack;startPuzzle(q,'home');
   if(Q.get('solve')){const n=+Q.get('solve');let left=0;for(let i=0;i<G.n;i++){if(left<n&&G.sol[i]>0&&i>G.n/2){left++;continue;}G.st[i]=G.sol[i]>0?G.sol[i]:(Q.get('solve')==='9'?-1:0);}updLines(true);draw();}
   if(Q.get('zoom')){G.z=+Q.get('zoom');clampView();draw();}}}
  const v=Q.get('view');if(v==='settings')openSettings();if(v==='stats')openStats();
