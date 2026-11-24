@@ -1,6 +1,6 @@
 # Lattice
 
-A picture-logic puzzle game: fill the squares the clues call for and a picture appears. Eight collections of hand-made pictures, a daily puzzle, and an endless mode.
+A picture-logic puzzle game: fill the squares the clues call for and a picture appears. Thirty-two collections of hand-made pictures (768 in all), a daily puzzle, and an endless mode.
 
 **Play:** https://akuforge.com/lattice/
 

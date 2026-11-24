@@ -261,7 +261,7 @@ html.duo-side .pin{padding-top:calc(var(--sat) + 14px)}
 <script src="puzzles.js"></script>
 <script>
 'use strict';
-const BUILD='2026-11-24.1';
+const BUILD='2026-11-24.2';
 const Q=new URLSearchParams(location.search);
 const $=id=>document.getElementById(id);
 const PACKS=window.LATTICE_PACKS||[];
@@ -422,10 +422,11 @@ function thumb(q,size,mode){// mode: 'pic' solved picture, 'prog' the player's m
   const st=(S.prog[q.id]||{}).s;if(mode==='prog'&&st){x.globalAlpha=.85;for(let i=0;i<st.length;i++){const v=st.charCodeAt(i)-48;if(v>0&&v<10){x.fillStyle=colourOf(q.colors[v-1]);x.fillRect(ox+(i%q.w)*cell,oy+Math.floor(i/q.w)*cell,cell,cell);}}x.globalAlpha=1;}}
  thumbCache.set(key,cv);return cv;}
 function cloneCanvas(c){const n=document.createElement('canvas');n.width=c.width;n.height=c.height;n.style.cssText=c.style.cssText;n.getContext('2d').drawImage(c,0,0);return n;}
-// a collection's cover: its twelve pictures in a 4x3 mosaic, filled in as they're solved
+// a collection's cover: its pictures in a mosaic (6x4 for 24, 4x3 for 12), filled in as they're solved
 function cover(p,size){const cv=document.createElement('canvas'),px=Math.round(size*DPR);cv.width=px;cv.height=Math.round(px*.75);cv.style.width=size+'px';cv.style.height=Math.round(size*.75)+'px';
- const x=cv.getContext('2d'),gap=Math.max(1,Math.round(2*DPR)),tw=(px-gap*3)/4,th=(cv.height-gap*2)/3;
- p.puzzles.forEach((q,i)=>{const cx=Math.round((i%4)*(tw+gap)),cy=Math.round(Math.floor(i/4)*(th+gap)),pr=S.prog[q.id];
+ const n=p.puzzles.length,cols=n>12?6:4,rows=Math.ceil(n/cols);
+ const x=cv.getContext('2d'),gap=Math.max(1,Math.round((n>12?1.5:2)*DPR)),tw=(px-gap*(cols-1))/cols,th=(cv.height-gap*(rows-1))/rows;
+ p.puzzles.forEach((q,i)=>{const cx=Math.round((i%cols)*(tw+gap)),cy=Math.round(Math.floor(i/cols)*(th+gap)),pr=S.prog[q.id];
   x.fillStyle=pr&&pr.done?TH.paper:TH.line;x.globalAlpha=pr&&pr.done?1:.55;x.fillRect(cx,cy,Math.round(tw),Math.round(th));x.globalAlpha=1;
   if(pr&&pr.done){const c=Math.max(1,Math.floor(Math.min(tw/q.w,th/q.h)*.9)),ox=cx+Math.floor((tw-c*q.w)/2),oy=cy+Math.floor((th-c*q.h)/2);
    for(let k=0;k<q.grid.length;k++){const v=q.grid[k];if(!v)continue;x.fillStyle=colourOf(q.colors[v-1]);x.fillRect(ox+(k%q.w)*c,oy+Math.floor(k/q.w)*c,c,c);}}});
